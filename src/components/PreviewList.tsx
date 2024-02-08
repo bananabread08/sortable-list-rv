@@ -15,19 +15,23 @@ export const PreviewList = ({ list, openEditor }: { list: TList; openEditor: () 
         </div>
       </div>
       <div className="p-2">
-        <table className="w-full">
-          <thead className="text-left">
+        <table className="w-full border-separate border-spacing-y-2">
+          <thead className="text-left uppercase">
             <tr>
+              <th>&nbsp;</th>
               <th>Item</th>
               <th>Quantity</th>
+              <th>&nbsp;</th>
             </tr>
           </thead>
           <tbody>
             {list.items.map((item) => {
               return (
                 <tr key={item.id}>
+                  <td className="w-5"></td>
                   <td>{item.name}</td>
                   <td>{item.quantity}</td>
+                  <td className="w-5"></td>
                 </tr>
               )
             })}
