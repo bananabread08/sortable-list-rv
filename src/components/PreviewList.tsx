@@ -14,29 +14,27 @@ export const PreviewList = ({ list, openEditor }: { list: TList; openEditor: () 
           <p className="font-semibold">{list.type}</p>
         </div>
       </div>
-      <div className="p-2">
-        <table className="w-full border-separate border-spacing-y-2">
-          <thead className="text-left uppercase">
-            <tr>
-              <th>&nbsp;</th>
-              <th>Item</th>
-              <th>Quantity</th>
-              <th>&nbsp;</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.items.map((item) => {
-              return (
-                <tr key={item.id}>
-                  <td className="w-5"></td>
-                  <td>{item.name}</td>
-                  <td>{item.quantity}</td>
-                  <td className="w-5"></td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+
+      <div className="flex flex-col gap-1 p-2">
+        <div className="flex flex-row justify-between">
+          <div className="basis-[3rem]"></div>
+          <div className="flex-1 uppercase font-semibold">Item</div>
+          <div className="basis-[8rem] uppercase font-semibold text-center">Quantity</div>
+          <div className="basis-[3rem]"></div>
+        </div>
+        {list.items.map((item) => {
+          return (
+            <div
+              className="flex flex-row justify-between border border-blue-400 bg-white rounded-sm py-2"
+              key={item.id}
+            >
+              <div className="basis-[3rem]"></div>
+              <div className="flex-1">{item.name}</div>
+              <div className="basis-[8rem] text-center">{item.quantity}</div>
+              <div className="basis-[3rem]"></div>
+            </div>
+          )
+        })}
       </div>
       <hr></hr>
       <div className="self-end py-2 px-4">
