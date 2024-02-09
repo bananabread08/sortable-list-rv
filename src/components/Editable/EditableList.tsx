@@ -2,20 +2,31 @@ import { type TList } from '@/data'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { useEditList } from '@/hooks/useEditList'
-import { Label } from '../ui/label'
-import { TypeSelect } from './TypeSelect'
 import { EditableItem } from './EditableItem'
 import {
   DndContext,
   DragEndEvent,
   PointerSensor,
   TouchSensor,
-  UniqueIdentifier,
   closestCorners,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { z } from 'zod'
+import { useForm, useFieldArray } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form'
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from '../ui/select'
+import { ListLabels } from '../Preview/ListLabels'
 
 type EditableListProps = {
   list: TList
@@ -23,28 +34,57 @@ type EditableListProps = {
   cancelEdit: () => void
 }
 
+const itemSchema = z.object({
+  name: z.string().min(3, 'Item name is required.'),
+  quantity: z.coerce.number(),
+  id: z.string(),
+})
+
+export const formSchema = z.object({
+  name: z.string().min(3, 'List name is required.'),
+  type: z.union([z.literal('Grocery'), z.literal('Home Goods'), z.literal('Hardware')]),
+  items: z.array(itemSchema),
+})
+
 export const EditableList = ({ list, saveList, cancelEdit }: EditableListProps) => {
   /**
    * 1. The master list will only be changed when the Save Button is clicked.
    * 2. Clicking the Cancel Button will revert all changes made.
    */
-  const {
-    editList,
-    deleteItem,
-    addItem,
-    updateItemQuantity,
-    updateItemName,
-    updateListName,
-    updateListType,
-    sortItems,
-  } = useEditList(list)
+  const { editList } = useEditList(list)
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: editList.name,
+      type: editList.type,
+      items: editList.items.map((item) => item),
+    },
+  })
+
+  const { fields, append, remove, move } = useFieldArray({
+    name: 'items',
+    control: form.control,
+    keyName: 'uid',
+  })
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log(values)
+    saveList(values)
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
     // active is the current dragged element
     // over is the item to be replaced.
     const { active, over } = event
-    if (active.id === over?.id) return
-    sortItems(active.id, over?.id as UniqueIdentifier)
+    if (over && active.id !== over?.id) {
+      const activeIndex = active.data.current?.sortable?.index
+      const overIndex = over.data.current?.sortable?.index
+      console.log({ activeIndex, overIndex })
+      if (activeIndex !== undefined && overIndex !== undefined) {
+        move(activeIndex, overIndex)
+      }
+    }
   }
 
   // for mobile users
@@ -52,54 +92,93 @@ export const EditableList = ({ list, saveList, cancelEdit }: EditableListProps) 
 
   return (
     <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCorners} sensors={sensors}>
-      <section className="bg-blue-200 rounded-md flex flex-col">
-        <div className="p-2">
-          <div className="flex justify-between">
-            <div className="flex-1">
-              <Label htmlFor="list-name">List Name</Label>
-              <Input
-                name="list-name"
-                type="text"
-                value={editList.name}
-                onChange={(e) => updateListName(e.target.value)}
-              />
+      <section>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="bg-blue-200 rounded-md flex flex-col"
+          >
+            <div className="p-2">
+              <div className="flex justify-between">
+                <div className="flex-1">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>List Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Your Shopping List" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="flex-1">
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <Select defaultValue={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Type</SelectLabel>
+                              <SelectItem value="Grocery">Grocery</SelectItem>
+                              <SelectItem value="Home Goods">Home Goods</SelectItem>
+                              <SelectItem value="Hardware">Hardware</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+              <Button
+                className="w-full mt-4"
+                onClick={() => append({ name: '', quantity: 1, id: self.crypto.randomUUID() })}
+              >
+                Add an Item
+              </Button>
             </div>
-            <div className="flex-1">
-              <Label htmlFor="list-type">Type</Label>
-              <TypeSelect listName={editList.type} updateListType={updateListType} />
+            <div className="flex flex-col gap-1 p-2">
+              <ListLabels />
+              <SortableContext items={fields} strategy={verticalListSortingStrategy}>
+                {fields.map((field, index) => {
+                  return (
+                    <EditableItem key={field.id} form={form} field={field} index={index}>
+                      <div className="basis-[3rem]">
+                        <Button
+                          variant="destructive"
+                          onClick={() => remove(index)}
+                          className="h-6 px-2"
+                        >
+                          X
+                        </Button>
+                      </div>
+                    </EditableItem>
+                  )
+                })}
+              </SortableContext>
             </div>
-          </div>
-          <Button className="w-full mt-4" onClick={addItem}>
-            Add an Item
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-1 p-2">
-          <div className="flex flex-row justify-between">
-            <div className="basis-[3rem]"></div>
-            <div className="flex-1 uppercase font-semibold">Item</div>
-            <div className="basis-[8rem] uppercase font-semibold">Quantity</div>
-            <div className="basis-[3rem]"></div>
-          </div>
-          <SortableContext items={editList.items} strategy={verticalListSortingStrategy}>
-            {editList.items.map((item) => {
-              return (
-                <EditableItem
-                  key={item.id}
-                  item={item}
-                  updateItemName={updateItemName}
-                  updateItemQuantity={updateItemQuantity}
-                  deleteItem={deleteItem}
-                />
-              )
-            })}
-          </SortableContext>
-        </div>
-        <hr></hr>
-        <div className="self-end py-2 px-4 space-x-2">
-          <Button onClick={() => saveList(editList)}>Save Changes</Button>
-          <Button onClick={cancelEdit}>Cancel</Button>
-        </div>
+            <hr></hr>
+            <div className="self-end py-2 px-4 space-x-2">
+              <Button type="submit">Save Changes</Button>
+              <Button type="button" onClick={cancelEdit}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Form>
       </section>
     </DndContext>
   )

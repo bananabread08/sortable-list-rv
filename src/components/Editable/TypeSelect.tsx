@@ -7,19 +7,11 @@ import {
   SelectGroup,
   SelectLabel,
 } from '../ui/select'
+import { ControllerRenderProps } from 'react-hook-form'
 
-export const TypeSelect = ({
-  listName,
-  updateListType,
-}: {
-  listName: string
-  updateListType: (value: 'Grocery' | 'Home Goods' | 'Hardware') => void
-}) => {
+export const TypeSelect = ({ field }: { field: ControllerRenderProps }) => {
   return (
-    <Select
-      defaultValue={listName}
-      onValueChange={(value: 'Grocery' | 'Home Goods' | 'Hardware') => updateListType(value)}
-    >
+    <Select defaultValue={field.value} onValueChange={field.onChange}>
       <SelectTrigger>
         <SelectValue placeholder="Type" />
       </SelectTrigger>

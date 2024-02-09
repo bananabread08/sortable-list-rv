@@ -2,30 +2,37 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripIcon } from 'lucide-react'
 import { Input } from '../ui/input'
-import { Button } from '../ui/button'
-import { ListItem } from '@/data'
-import { QuantitySelect } from './QuantitySelect'
+import { FormControl, FormField, FormItem, FormMessage } from '../ui/form'
+import { formSchema } from './EditableList'
+import { z } from 'zod'
+import { FieldArrayWithId, UseFormReturn } from 'react-hook-form'
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from '../ui/select'
 
 type EditableItemProps = {
-  item: ListItem
-  updateItemName: (id: string, value: string) => void
-  updateItemQuantity: (id: string, value: string) => void
-  deleteItem: (id: string) => void
+  form: UseFormReturn<z.infer<typeof formSchema>>
+  field: FieldArrayWithId<z.infer<typeof formSchema>>
+  index: number
+  children: React.ReactNode
 }
 
-export const EditableItem = ({
-  item,
-  updateItemName,
-  updateItemQuantity,
-  deleteItem,
-}: EditableItemProps) => {
+export const EditableItem = ({ form, field: item, index, children }: EditableItemProps) => {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition } =
     useSortable({ id: item.id })
 
+  // to easily inject style of draggable elements from DnD kit
   const style = {
     transition,
     transform: CSS.Transform.toString(transform),
   }
+
   return (
     <div
       ref={setNodeRef}
@@ -37,21 +44,49 @@ export const EditableItem = ({
         <GripIcon />
       </div>
       <div className="flex-1">
-        <Input
-          className="w-fit"
-          type="text"
-          value={item.name}
-          onChange={(e) => updateItemName(item.id, e.target.value)}
+        <FormField
+          control={form.control}
+          key={item.id}
+          name={`items.${index}.name`}
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
       </div>
-      <div className="basis-[8rem] text-center">
-        <QuantitySelect item={item} updateItemQuantity={updateItemQuantity} />
+      <div className="basis-[8rem] text-center ml-2">
+        <FormField
+          control={form.control}
+          name={`items.${index}.quantity`}
+          render={({ field }) => (
+            <FormItem>
+              <Select onValueChange={field.onChange} defaultValue={item.quantity.toString()}>
+                <FormControl>
+                  <SelectTrigger className="w-[80px]">
+                    <SelectValue placeholder="How many?" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Quantity</SelectLabel>
+                    {Array.from({ length: 12 }, (_, index) => index + 1).map((n) => (
+                      <SelectItem value={n.toString()} key={`items.${index}.quantity` + n}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
-      <div className="basis-[3rem]">
-        <Button variant="destructive" onClick={() => deleteItem(item.id)} className="h-6 px-2">
-          X
-        </Button>
-      </div>
+      {children}
     </div>
   )
 }
