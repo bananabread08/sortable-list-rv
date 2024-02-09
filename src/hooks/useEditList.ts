@@ -6,7 +6,6 @@ import { useState } from 'react'
 export const useEditList = (list: TList) => {
   const [editList, setEditList] = useState({ ...list })
   const deleteItem = (id: string) => {
-    console.log(editList)
     const filteredItems = editList.items.filter((item) => item.id !== id)
     setEditList({ ...editList, items: filteredItems })
   }
