@@ -20,6 +20,7 @@ export const useList = () => {
     setEditing(false)
     toast({
       title: `Successfully saved ${newList.name}!`,
+      variant: 'success',
     })
   }
 
