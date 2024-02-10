@@ -1,7 +1,7 @@
+import { useState } from 'react'
 import { type TList } from '@/data'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { useEditList } from '@/hooks/useEditList'
 import { EditableItem } from './EditableItem'
 import {
   DndContext,
@@ -27,6 +27,7 @@ import {
   SelectLabel,
 } from '../ui/select'
 import { ListLabels } from '../Preview/ListLabels'
+import { Save, X } from 'lucide-react'
 
 type EditableListProps = {
   list: TList
@@ -35,13 +36,13 @@ type EditableListProps = {
 }
 
 const itemSchema = z.object({
-  name: z.string().min(3, 'Item name is required.'),
+  name: z.string().min(1, 'Item name is required.'),
   quantity: z.coerce.number(),
   id: z.string(),
 })
 
 export const formSchema = z.object({
-  name: z.string().min(3, 'List name is required.'),
+  name: z.string().min(1, 'List name is required.').max(30, 'Maximum of 30 characters only.'),
   type: z.union([z.literal('Grocery'), z.literal('Home Goods'), z.literal('Hardware')]),
   items: z.array(itemSchema),
 })
@@ -51,7 +52,8 @@ export const EditableList = ({ list, saveList, cancelEdit }: EditableListProps) 
    * 1. The master list will only be changed when the Save Button is clicked.
    * 2. Clicking the Cancel Button will revert all changes made.
    */
-  const { editList } = useEditList(list)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [editList, setEditList] = useState({ ...list })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -96,10 +98,10 @@ export const EditableList = ({ list, saveList, cancelEdit }: EditableListProps) 
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="bg-blue-200 rounded-md flex flex-col"
+            className="bg-white rounded-md flex flex-col shadow-md"
           >
             <div className="p-2">
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-2">
                 <div className="flex-1">
                   <FormField
                     control={form.control}
@@ -144,36 +146,42 @@ export const EditableList = ({ list, saveList, cancelEdit }: EditableListProps) 
                 </div>
               </div>
               <Button
-                className="w-full mt-4"
+                className="w-full mt-4 bg-blue-500 hover:bg-blue-700"
                 onClick={() => append({ name: '', quantity: 1, id: self.crypto.randomUUID() })}
               >
                 Add an Item
               </Button>
             </div>
-            <div className="flex flex-col gap-1 p-2">
+            <div className="m-2">
               <ListLabels />
-              <SortableContext items={fields} strategy={verticalListSortingStrategy}>
-                {fields.map((field, index) => {
-                  return (
-                    <EditableItem key={field.id} form={form} field={field} index={index}>
-                      <div className="basis-[3rem]">
-                        <Button
-                          variant="destructive"
-                          onClick={() => remove(index)}
-                          className="h-6 px-2"
-                        >
-                          X
-                        </Button>
-                      </div>
-                    </EditableItem>
-                  )
-                })}
-              </SortableContext>
+              <div className="flex flex-col gap-1 p-2 rounded-md bg-gray-200">
+                <SortableContext items={fields} strategy={verticalListSortingStrategy}>
+                  {fields.map((field, index) => {
+                    return (
+                      <EditableItem key={field.id} form={form} field={field} index={index}>
+                        <div className="basis-[3rem] px-2">
+                          <Button
+                            variant="destructive"
+                            onClick={() => remove(index)}
+                            className="h-6 w-6"
+                            size="icon"
+                          >
+                            <X />
+                          </Button>
+                        </div>
+                      </EditableItem>
+                    )
+                  })}
+                </SortableContext>
+              </div>
             </div>
             <hr></hr>
-            <div className="self-end py-2 px-4 space-x-2">
-              <Button type="submit">Save Changes</Button>
-              <Button type="button" onClick={cancelEdit}>
+            <div className="self-end py-2 px-4 flex justify-between gap-2">
+              <Button type="submit" className="space-x-2 bg-blue-500 hover:bg-blue-700">
+                <Save />
+                <span>Save Changes</span>
+              </Button>
+              <Button type="button" onClick={cancelEdit} variant="outline">
                 Cancel
               </Button>
             </div>

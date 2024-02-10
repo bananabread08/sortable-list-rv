@@ -38,7 +38,7 @@ export const EditableItem = ({ form, field: item, index, children }: EditableIte
       ref={setNodeRef}
       {...attributes}
       style={style}
-      className="flex flex-row justify-between items-center border border-blue-400 bg-white rounded-sm py-2 touch-none"
+      className="flex flex-row justify-between items-center border border-r-4 border-b-2 border-b-black border-r-black border-slate-400 bg-white rounded-sm py-2 touch-none"
     >
       <div className="basis-[3rem] px-2" ref={setActivatorNodeRef} {...listeners}>
         <GripIcon />
@@ -58,7 +58,7 @@ export const EditableItem = ({ form, field: item, index, children }: EditableIte
           )}
         />
       </div>
-      <div className="basis-[8rem] text-center ml-2">
+      <div className="basis-[80px] text-center ml-2">
         <FormField
           control={form.control}
           name={`items.${index}.quantity`}
