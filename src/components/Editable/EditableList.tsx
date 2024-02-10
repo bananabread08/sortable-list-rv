@@ -52,8 +52,7 @@ export const EditableList = ({ list, saveList, cancelEdit }: EditableListProps) 
    * 1. The master list will only be changed when the Save Button is clicked.
    * 2. Clicking the Cancel Button will revert all changes made.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [editList, setEditList] = useState({ ...list })
+  const [editList] = useState({ ...list })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
